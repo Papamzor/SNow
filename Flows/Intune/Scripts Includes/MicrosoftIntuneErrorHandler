@@ -1,0 +1,145 @@
+var MicrosoftIntuneErrorHandler = Class.create();
+MicrosoftIntuneErrorHandler.prototype = {
+    initialize: function() {},
+
+    retrieveErrorMessage: function(code) {
+        var errorCodeMsgs = {
+            "unauthorized": "Invalid username or password/token or the token has expired.",
+            "forbidden": "The user does not have sufficient permission to perform this action.",
+
+            //Get Managed Device
+            "get_device_id_invalid": "Provided Device ID is invalid or appears to be missing.",
+
+            //Get Managed Application
+            "mobile_app_invalid_id": "Provided Application ID is invalid.",
+
+            //Delete Managed Device
+            "invalid_device_id": "Provided Device ID is invalid.",
+
+            //Look up Managed Devices By User
+            "invalid_user_id": "Provided User ID is invalid.",
+
+            //Update Managed Device
+            "update_device_id_invalid": "Provided Device ID is invalid or appears to be missing.",
+			"update_owner_invalid": "Provided Owner Type is invalid."
+
+        };
+        for (var key in errorCodeMsgs) {
+            if (key == code) {
+                return errorCodeMsgs[key];
+            }
+        }
+    },
+    genericErrorHandler: function(inputs, outputs) {
+        outputs.status = 'Error';
+
+        if (inputs.status_code == '401' && (inputs.response.indexOf(
+                'UnAuthorized. Authentication Failed.'
+            ) != -1) || (inputs.response.indexOf(
+                'InvalidAuthenticationToken') != -1) || (inputs.error_message.indexOf(
+                'Invalid username/password combo') != -1))
+            outputs.error_message = this.retrieveErrorMessage('unauthorized');
+        else if ((inputs.status_code == '403') && ((inputs.response.indexOf(
+                'You do not have permission'
+            ) != -1) || (inputs.error_message.indexOf(
+                'Forbidden username/password combo'
+            ) != -1))) outputs.error_message = this
+            .retrieveErrorMessage('forbidden');
+        else
+            outputs.error_message = "Unexpected error occurred. Please check the response received from the api for more details.";
+        //return the error message
+        return outputs;
+    },
+
+    getManagedDeviceErrorHandler: function(inputs, outputs) {
+        outputs.status = 'Error';
+        switch (String(inputs.status_code)) {
+            case "400":
+                if (inputs.response.indexOf("BadRequest") != -1)
+                    outputs.error_message = this.retrieveErrorMessage('get_device_id_invalid');
+                else
+                    this.genericErrorHandler(inputs, outputs);
+                break;
+            case "404":
+                if (inputs.response.indexOf("ResourceNotFound") != -1)
+                    outputs.error_message = this.retrieveErrorMessage('get_device_id_invalid');
+                else
+                    this.genericErrorHandler(inputs, outputs);
+                break;
+            default:
+                this.genericErrorHandler(inputs, outputs);
+        }
+        return outputs;
+    },
+
+    getManagedApplicationErrorHandler: function(inputs, outputs) {
+        outputs.status = 'Error';
+        switch (String(inputs.status_code)) {
+            case "400":
+                if ((inputs.response.indexOf("Invalid app id") != -1) || (inputs.response.indexOf(" Error in query syntax") != -1))
+                    outputs.error_message = this.retrieveErrorMessage('mobile_app_invalid_id');
+                else
+                    this.genericErrorHandler(inputs, outputs);
+                break;
+            default:
+                this.genericErrorHandler(inputs, outputs);
+        }
+        return outputs;
+    },
+
+    deleteManagedDeviceErrorHandler: function(inputs, outputs) {
+        outputs.status = 'Error';
+        switch (String(inputs.status_code)) {
+            case "400":
+                if (inputs.response.indexOf("An error has occurred - Operation ID") != -1)
+                    outputs.error_message = this.retrieveErrorMessage('invalid_device_id');
+                else
+                    this.genericErrorHandler(inputs, outputs);
+                break;
+            default:
+                this.genericErrorHandler(inputs, outputs);
+        }
+        return outputs;
+    },
+
+    lookupManagedDevicesByUserErrorHandler: function(inputs, outputs) {
+        outputs.status = 'Error';
+        switch (String(inputs.status_code)) {
+            case "400":
+                if (inputs.response.indexOf("Bad Request - Error in query syntax.") != -1)
+                    outputs.error_message = this.retrieveErrorMessage('invalid_user_id');
+                else
+                    this.genericErrorHandler(inputs, outputs);
+                break;
+            case "404":
+                if (inputs.response.indexOf("ResourceNotFound") != -1)
+                    outputs.error_message = this.retrieveErrorMessage('invalid_user_id');
+                else
+                    this.genericErrorHandler(inputs, outputs);
+                break;
+            default:
+                this.genericErrorHandler(inputs, outputs);
+        }
+        return outputs;
+    },
+	
+	updateManagedDeviceErrorHandler: function(inputs, outputs) {
+        outputs.status = 'Error';
+        switch (String(inputs.status_code)) {
+            case "400":
+                if (inputs.response.indexOf("An error has occurred - Operation ID") != -1)
+                    outputs.error_message = this.retrieveErrorMessage('update_device_id_invalid');
+                else if ((inputs.response.indexOf("Requested value") != -1) && (inputs.response.indexOf("was not found") != -1))
+                    outputs.error_message = this.retrieveErrorMessage('update_owner_invalid');
+				else
+                    this.genericErrorHandler(inputs, outputs);
+                break;
+            default:
+                this.genericErrorHandler(inputs, outputs);
+        }
+        return outputs;
+    },
+
+
+    type: 'MicrosoftIntuneErrorHandler'
+};
