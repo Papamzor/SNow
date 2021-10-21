@@ -1,0 +1,22 @@
+(function execute(inputs, outputs) {
+	if (inputs.status_code == '200') {
+		outputs.status = "Success";
+		var response = JSON.parse(inputs.response);
+		var json_response = response.value;
+		var payload = json_response;
+		var tables = {
+			data: []
+		};
+		payload.map(function(item) {
+			tables.data.push({
+				"name": item.id,
+				"label": item.displayName
+			});
+		});
+		outputs.output = tables;
+		outputs.managed_app = json_response;
+	} else {
+		outputs = new MicrosoftIntuneErrorHandler().genericErrorHandler(inputs,
+			outputs);
+	}
+})(inputs, outputs);
