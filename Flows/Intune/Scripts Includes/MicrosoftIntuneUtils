@@ -1,0 +1,34 @@
+var MicrosoftIntuneUtils = Class.create();
+MicrosoftIntuneUtils.prototype = {
+    initialize: function() {},
+
+    trimStringInputs: function(inputs) {
+        for (var key in inputs) {
+            if (inputs[key] && typeof inputs[key] ==
+                'string') {
+                inputs[key] = inputs[key].trim();
+            }
+        }
+        return inputs;
+    },
+
+    validateEmptyValue: function(value, inputName) {
+        var regex = /^[a-zA-Z0-9-]*$/;
+        if (value && regex.test(value)) {
+            return value;
+        } else {
+            throw new Error(
+                "Provided " + inputName + " is invalid or appears to be missing."
+            );
+        }
+    },
+
+    validatePayload: function(value, input1, input2) {
+        if (value.managedDeviceName || value.managedDeviceOwnerType)
+            return value;
+        else
+            throw new Error(input1 + " and " + input2 + " appears to be missing.");
+    },
+
+    type: 'MicrosoftIntuneUtils'
+};
