@@ -1,0 +1,50 @@
+//Action inputs: Inputs= filtering_on and filter_value
+//Step 2: action preprocessing, see script below
+
+(function execute(inputs, outputs) {
+	inputs = new MicrosoftIntuneUtils().trimStringInputs(inputs);
+	if (inputs.filtering_on == "None") outputs.filter = null;
+	else {
+		if (inputs.filtering_on == "managedDeviceOwnerType" || inputs
+			.filtering_on == "deviceRegistrationState" || inputs
+			.filtering_on == "complianceState") outputs.filter = inputs
+			.filtering_on + " " + "eq" + " " + "'" + inputs.filter_value +
+			"'";
+		else outputs.filter = "contains" + "(" + inputs.filtering_on + "," +
+			"'" + inputs.filter_value + "'" + ")";
+	}
+})(inputs, outputs);
+
+//Step 3: request data via rest step (enable pagination)
+//Step 4: pagination setup, 3 variables: getNextPage (false value and script next value), odatanextlink (response body), skiptoken (script)
+
+(function paginate(variables, pageResponse) {
+try {
+var odata_nextlink = variables.odatanextlink;
+var next_link = JSON.stringify(odata_nextlink);
+if(next_link != '') {
+    
+    variables.getNextPage = true;
+    variables.skipToken = odata_nextlink.split('$skiptoken=')[1];
+}else {     
+   variables.getNextPage = false;
+} 
+}catch(err) {
+ variables.getNextPage = false;
+}
+})(variables, pageResponse);
+
+//Step 5: Look up managed devices REST STEP
+//step>Look Up Managed Devices>version/deviceManagement/managedDevices
+//Query parameters: $top 500; $skiptoken; $filter
+
+//Step 6: enable parsing
+//step 7: splitter setup ($.value)
+//Step 8: Script Parser Setup
+
+(function parse(inputs, outputs) {
+    var item = JSON.parse(inputs.sourceItem);
+    outputs.targetObject = item;
+})(inputs, outputs)
+
+//OUTPUTS: all data pulled from intune
