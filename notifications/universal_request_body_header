@@ -1,0 +1,7 @@
+(function runMailScript(current, template, email, email_action, event) {
+
+	template.print('<p><font size="4" color="#000000" face="helvetica">');
+	template.print('${number} - ${short_description}');
+	template.print('</font></p>');
+  
+})(current, template, email, email_action, event);
