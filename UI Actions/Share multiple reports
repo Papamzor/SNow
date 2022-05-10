@@ -16,8 +16,9 @@ var dialog = new GlideDialogWindow('shareBulkReports');
     dialog.render();
 }
 
-OnClick (client UI Action): shareReports()
+OnClick (client UI Action): processReports()
 Condition (We want only admins to be able to do this): gs.hasRole('report_admin' //add any role you want here
 
 !Please see documentation for the UI Page in the UI Page section!
+!Please see documentation for the Script Include in the Script Include section!
 
