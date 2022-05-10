@@ -1,0 +1,232 @@
+HTML Code:
+
+<?xml version="1.0" encoding="utf-8" ?>
+<j:jelly trim="false" xmlns:j="jelly:core" xmlns:g="glide" xmlns:j2="null" xmlns:g2="null">
+	
+<j:set var="jvar_report_sysIds" value="${sysparm_sysIds}"/>
+<j:set var="jvar_report_count" value="${sysparm_totalRecords}"/>
+
+	<div style="text-align:center;">
+	<h4>Sharing ${jvar_report_count} reports</h4>
+	</div>
+
+  <script>
+    addLoadEvent( function() {
+    var tabs = new GlideTabs2("tabs2_section", gel("rules_span"), 0, '');
+    tabs.activate();
+    show("rules_span");
+    });
+  </script>
+  <g:inline template="tabs2.xml" />
+	<div style="margin:20px">
+  <TABLE width="100%" cellSpacing="0" cellPadding="0" border="0">
+    <TR>
+      <TD valign="top">
+		  
+        <!-- tabstrip for tabs -->
+        <div class="tabs2_strip" id="tabs2_section">
+          <!-- hack for IE bug when tab strip causes a horizontal scroll bar to appear -->
+          <img src="images/s.gifx" alt="" height="1px" width="1px" style="margin-right: 0px;" />
+        </div>
+      </TD>  
+    </TR>
+	<TR>
+	
+	<TD align="center">
+		<span id="rules_span" style="display:none;border-top: 1px solid black; padding-top: 5px; margin-top: -7px;">
+          <!--Tab 1-->
+          <div id="section_tab.1" class="tabs2_section" tab_caption="Groups" tab_caption_raw="Groups">
+            <div id="groupsTab">
+				<g:evaluate>
+				//Get all groups
+				var grGroup = new GlideRecord('sys_user_group');
+				grGroup.addQuery('active', true);
+				grGroup.orderBy('name');
+				grGroup.query();
+				</g:evaluate>		
+					<TABLE>
+					  <TR>
+						<TD>
+						  <!-- Include the 'ui_slushbucket' UI macro -->
+						  <g:ui_slushbucket name="sbGroup" left_header="Groups" right_header="Selected">
+							  
+                             <j:while test="${grGroup.next()}">  
+                                        <option value="${grGroup.sys_id}"> ${grGroup.name} </option>  
+							</j:while>
+						  </g:ui_slushbucket>
+						</TD>
+					  </TR>
+					</TABLE>
+		 </div>
+            <div id="1_spacer" style="display: none; margin-bottom: 1px;" glide="true"></div>
+          </div>
+			
+			
+          <!--Tab 2-->
+          <div id="section_tab.2" class="tabs2_section" tab_caption="Users" tab_caption_raw="Users">
+            <div id="userstab">
+              
+				<g:evaluate>
+				//Get all Users
+				var grUser = new GlideRecord('sys_user');
+				grUser.addQuery('active', true);
+				grUser.orderBy('name');
+				grUser.query();
+				</g:evaluate>		
+					<TABLE>
+					  <TR>
+						<TD>
+						  <!-- Include the 'ui_slushbucket' UI macro -->
+						  <g:ui_slushbucket name="sbUser" left_header="Users" right_header="Selected">
+                            <j:while test="${grUser.next()}">  
+                                        <option value="${grUser.sys_id}"> ${grUser.name} </option>  
+                            </j:while>
+						  </g:ui_slushbucket>
+						</TD>
+					  </TR>
+					</TABLE>
+            </div>
+            <div id="2_spacer" style="display: none; margin-bottom: 1px;" glide="true"></div>
+          </div>
+			
+		
+        </span>
+        <div id="tabs2_spacer" style="visibility: hidden;"/>
+      </TD>
+    </TR>
+	  
+	<TR>
+		
+           <TD align="right">
+
+             <!-- Include the 'dialog_buttons_ok_cancel' UI macro -->
+             <g:dialog_buttons_ok_cancel ok="return onContinue()" cancel="return onCancel()" ok_type="button" cancel_type="button"/>
+           </TD>
+    </TR>
+		 
+  </TABLE>
+	</div>
+</j:jelly>
+
+
+
+CLIENT SCRIPT:
+
+//Process OK
+
+function onContinue() 
+
+{
+    try {
+        //Get user selection
+        var groups = sbGroup.getValues(sbGroup.getRightSelect()); //store values as string
+        var users = sbUser.getValues(sbUser.getRightSelect());
+        var reports = '${JS:sysparm_sysIds}';  
+        var count = '${JS:sysparm_totalRecords}';  
+		
+        //Ensuring that at least one user or groups is selected
+        if (groups != "" || users != "") {
+            //Share the reports to selected groups and users
+            var ajax = new GlideAjax('shareBulkReports');
+            ajax.addParam('sysparm_name', 'shareReport');
+            ajax.addParam('sysparm_groups', groups);
+            ajax.addParam('sysparm_users', users);
+            ajax.addParam('sysparm_reports', reports);
+            ajax.getXMLAnswer(getStatus);
+            
+        } else {
+            alert("At least one group or user must be selected");
+            return;
+        }
+    } catch (err) {
+        alert(err);
+    }
+	
+	
+	function getStatus(answer) {
+                if (answer == "success") {
+                    alert(count + " " + "Reports are shared with" + " " + users.length + " " + "users and" + " " + groups.length + " " + "groups successfully");
+                } else {
+                    alert(answer);
+                }
+            }
+	
+	
+    GlideDialogWindow.get().destroy();
+}
+
+//Process Cancel
+function onCancel() {
+    GlideDialogWindow.get().destroy();
+}
+
+
+
+PROCESSING SCRIPT:
+
+
+var shareBulkReports = Class.create();
+shareBulkReports.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+
+    shareReport: function() {
+
+        var userList = this.getParameter('sysparm_users'); //sys_ids of users as string passed via UI action
+        var groupList = this.getParameter('sysparm_groups'); //sys_ids of groups as string passed via UI action
+        var reportList = this.getParameter('sysparm_reports'); //sys_ids of reports as string passed via UI action
+        var answer;
+   
+        var reportArr = reportList.split(','); //Converting string to array
+
+        //Share report with Groups
+        if (groupList) {
+			var groupArr = groupList.split(',');//Converting string to array
+            try {
+                var i = 0;
+                while (i < groupArr.length) {
+                    var j = 0;
+                    var grReportGroups = new GlideRecord('sys_report_users_groups');
+                    while (j < reportArr.length) {
+				
+                        grReportGroups.newRecord();
+                        grReportGroups.setValue('group_id', groupArr[i]);
+                        grReportGroups.setValue('report_id', reportArr[j]);
+                        grReportGroups.insert();
+                        j++;
+						
+                    }
+                    i++;
+                }
+                answer = "success";
+            } catch (err) {
+                answer = err;
+            }
+        }
+
+        //Share reports with Users
+        if (userList) {
+			var userArr = userList.split(','); //Converting string to array
+            try {
+                var k = 0;
+                while (k < userArr.length) {
+                    var l = 0;
+                    var grReportUsers = new GlideRecord('sys_report_users_groups');
+                    while (l < reportArr.length) {
+						
+                        grReportUsers.newRecord();
+                        grReportUsers.setValue('user_id', userArr[k]);
+                        grReportUsers.setValue('report_id', reportArr[l]);
+                        grReportUsers.insert();
+                        l++;
+                        
+                    }
+                    k++;
+                }
+                answer = "success";
+            } catch (err) {
+                answer = err;
+            }
+        }
+        return answer;
+    },
+    type: 'shareBulkReports'
+});
