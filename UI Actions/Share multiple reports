@@ -1,0 +1,23 @@
+UI Action Script:
+
+function processReports(){
+var table = g_list.getTableName();
+var records = g_list.getChecked();
+var sysIds = records.split(',');
+var totalRecords = sysIds.length;
+
+var dialog = new GlideDialogWindow('shareBulkReports'); 
+    dialog.setTitle('Share Multiple Reports'); 
+	dialog.setSize(700, 600);
+	dialog.adjustBodySize();
+	dialog.removeCloseDecoration();
+    dialog.setPreference('sysparm_sysIds', records );
+    dialog.setPreference('sysparm_totalRecords',totalRecords);
+    dialog.render();
+}
+
+OnClick (client UI Action): shareReports()
+Condition (We want only admins to be able to do this): gs.hasRole('report_admin' //add any role you want here
+
+!Please see documentation for the UI Page in the UI Page section!
+
