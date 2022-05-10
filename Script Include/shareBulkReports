@@ -1,0 +1,77 @@
+var shareBulkReports = Class.create();
+shareBulkReports.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+
+    shareReport: function() {
+
+
+        var userList = this.getParameter('sysparm_users'); //sys_ids of users as string passed via UI action
+        var groupList = this.getParameter('sysparm_groups'); //sys_ids of groups as string passed via UI action
+        var reportList = this.getParameter('sysparm_reports'); //sys_ids of reports as string passed via UI action
+        var answer;
+
+        
+        
+        var reportArr = reportList.split(','); //Converting string to array
+
+
+        //Share report with Groups
+        if (groupList) {
+			var groupArr = groupList.split(',');//Converting string to array
+            try {
+                var i = 0;
+                while (i < groupArr.length) {
+                    var j = 0;
+                    var grReportGroups = new GlideRecord('sys_report_users_groups');
+                    while (j < reportArr.length) {
+				
+                        grReportGroups.newRecord();
+                        grReportGroups.setValue('group_id', groupArr[i]);
+                        grReportGroups.setValue('report_id', reportArr[j]);
+                        grReportGroups.insert();
+                        j++;
+						
+                    }
+                    i++;
+                }
+                answer = "success";
+
+            } catch (err) {
+                answer = err;
+            }
+
+
+        }
+
+
+        //Share reports with Users
+        if (userList) {
+			var userArr = userList.split(','); //Converting string to array
+            try {
+                var k = 0;
+                while (k < userArr.length) {
+                    var l = 0;
+                    var grReportUsers = new GlideRecord('sys_report_users_groups');
+                    while (l < reportArr.length) {
+						
+                        grReportUsers.newRecord();
+                        grReportUsers.setValue('user_id', userArr[k]);
+                        grReportUsers.setValue('report_id', reportArr[l]);
+                        grReportUsers.insert();
+                        l++;
+
+                    }
+                    k++;
+                }
+                answer = "success";
+            } catch (err) {
+                answer = err;
+            }
+        }
+
+        return answer;
+    },
+
+
+
+    type: 'shareBulkReports'
+});
